@@ -52,9 +52,6 @@ pdo_ibm: Select LOBs, including null and 0-length
 			);
 
 			$stmt = $this->db->prepare('insert into animals (id, my_clob, my_blob) values (?, ?, ?);');
-			$stmt->bindParam(1, $id);
-			$stmt->bindParam(2, $_FILES['file']['type']);
-			$stmt->bindParam(3, $fp, PDO::PARAM_LOB);
 
 			print "inserting\n";
 			foreach ($data as $row) {
@@ -133,12 +130,14 @@ running query
 string(1) "1"
 string(35) "this is the clob that never ends..."
 string(35) "this is the blob that never ends..."
-int(13)
 string(1) "2"
 NULL
 NULL
-bool(false)
 string(1) "3"
-bool(false)
+string(0) ""
+string(0) ""
+string(1) "4"
+string(35) "this is the clob resource that never ends..."
+string(35) "this is the blob resource that never ends..."
 done
 
