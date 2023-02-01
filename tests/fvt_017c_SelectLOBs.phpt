@@ -61,6 +61,20 @@ pdo_ibm: Select LOBs, including null and 0-length
 				$count++;
 			}
 
+			print "succesful\n";
+			print "running query\n";
+
+			$stmt = $this->db->prepare('SELECT id, my_clob, my_blob FROM animals;');
+
+			$rs = $stmt->execute();
+
+			foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $i => $row) {
+				var_dump( $row['ID'] );
+
+				$clobStrem = stream_get_contents($row['MY_CLOB']);
+				$blobStrem = stream_get_contents($row['MY_BLOB']);
+			}
+
 			print "done\n";
 		}
 	}
