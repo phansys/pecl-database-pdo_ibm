@@ -22,23 +22,53 @@ pdo_ibm: Select LOBs, including null and 0-length
 			$create = 'CREATE TABLE animals (id INTEGER, my_clob clob, my_blob blob)';
 			$result = $this->db->exec( $create );
 
+			$clobStream = tmpfile();
+			fwrite($clobStream, "this is the clob resource that never ends...");
+
+			$blobStream = tmpfile();
+			fwrite($blobStream, "this is the blob resource that never ends...");
+
 			$data = array (
-				array(1, 'this is the clob that never ends...',
-						 'this is the blob that never ends...')
-				,
-				array(2, null,null)
-				,
-				array(3,'','')
+				array(
+					array(PDO::PARAM_INT, 1),
+					array(PDO::PARAM_STR, 'this is the clob that never ends...'),
+					array(PDO::PARAM_STR, 'this is the blob that never ends...'),
+				),
+				array(
+					array(PDO::PARAM_INT, 2),
+					array(PDO::PARAM_STR, null),
+					array(PDO::PARAM_STR, null)
+				),
+				array(
+					array(PDO::PARAM_INT, 3),
+					array(PDO::PARAM_STR, ''),
+					array(PDO::PARAM_STR, '')
+				),
+				array(
+					array(PDO::PARAM_INT, 4),
+					array(PDO::PARAM_LOB, $clobStream),
+					array(PDO::PARAM_LOB, $blobStream)
+				)
 			);
 
-			$stmt = $this->db->prepare('insert into animals (id,my_clob,my_blob) values (?,?,?)');
+			$stmt = $this->db->prepare('insert into animals (id, my_clob, my_blob) values (?, ?, ?);');
+			$stmt->bindParam(1, $id);
+			$stmt->bindParam(2, $_FILES['file']['type']);
+			$stmt->bindParam(3, $fp, PDO::PARAM_LOB);
 
 			print "inserting\n";
 			foreach ($data as $row) {
-				$stmt->execute($row);
+				foreach ($row as $position => $value) {
+					$stmt->bindValue($position + 1, $value[1], $value[0]);
+				}
+				$stmt->execute();
 			}
 
+			fclose($clobStream);
+			fclose($blobStream);
+
 			print "succesful\n";
+			/*
 			print "running query\n";
 
 			$stmt = $this->db->prepare( 'select id,my_clob,my_blob from animals' );
@@ -62,6 +92,7 @@ pdo_ibm: Select LOBs, including null and 0-length
 			}
 
 			print "succesful\n";
+			*/
 			print "running query\n";
 
 			$stmt = $this->db->prepare('SELECT id, my_clob, my_blob FROM animals;');
@@ -69,10 +100,22 @@ pdo_ibm: Select LOBs, including null and 0-length
 			$rs = $stmt->execute();
 
 			foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $i => $row) {
-				var_dump( $row['ID'] );
+				var_dump($row['ID']);
 
-				$clobStrem = stream_get_contents($row['MY_CLOB']);
-				$blobStrem = stream_get_contents($row['MY_BLOB']);
+				if (is_resource($row['MY_CLOB'])) {
+					$clob = stream_get_contents($row['MY_CLOB']);
+				} else {
+					$clob = $row['MY_CLOB'];
+				}
+
+				if (is_resource($row['MY_BLOB'])) {
+					$blob = stream_get_contents($row['MY_BLOB']);
+				} else {
+					$blob = $row['MY_BLOB'];
+				}
+
+				var_dump($clob);
+				var_dump($blob);
 			}
 
 			print "done\n";
