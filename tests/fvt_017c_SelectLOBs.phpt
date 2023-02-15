@@ -8,6 +8,16 @@ pdo_ibm: Select LOBs, including null and 0-length
 
 	class Test extends FVTTest
 	{
+		public function connect($autoCommit=true, $useLibl=false, $useIsolation=false)
+		{
+			$options = array(PDO::ATTR_AUTOCOMMIT=>$autoCommit, PDO::ATTR_PERSISTENT => true);
+			$this->db = new PDO($this->dsn, $this->user, $this->pass, $options);
+			$this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+			$this->db->setAttribute(PDO::ATTR_CASE, PDO::CASE_UPPER);
+			$this->db->setAttribute(PDO::ATTR_STRINGIFY_FETCHES, true);
+			return $this->db;
+		}
+
 		public function runTest()
 		{
 			$this->connect();
