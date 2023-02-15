@@ -102,6 +102,7 @@ pdo_ibm: Select LOBs, including null and 0-length
 
 			foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $i => $row) {
 				var_dump($row['ID']);
+
 				$clob = $row['MY_CLOB'];
 
 				if (is_string($clob)) {
