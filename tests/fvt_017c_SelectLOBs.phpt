@@ -22,11 +22,8 @@ pdo_ibm: Select LOBs, including null and 0-length
 			$create = 'CREATE TABLE animals (id INTEGER, my_clob clob, my_blob blob)';
 			$result = $this->db->exec( $create );
 
-			$clobStream = tmpfile();
-			fwrite($clobStream, "this is the clob resource that never ends...");
-
-			$blobStream = tmpfile();
-			fwrite($blobStream, "this is the blob resource that never ends...");
+			$clobContent = str_repeat('c', 4 * 8192);
+			$blobContent = str_repeat('b', 4 * 8192);
 
 			$data = array (
 				array(
@@ -46,8 +43,8 @@ pdo_ibm: Select LOBs, including null and 0-length
 				),
 				array(
 					array(PDO::PARAM_INT, 4),
-					array(PDO::PARAM_LOB, $clobStream),
-					array(PDO::PARAM_LOB, $blobStream)
+					array(PDO::PARAM_LOB, fopen('data://text/plain,' . $clobContent, 'r')),
+					array(PDO::PARAM_LOB, fopen('data://text/plain,' . $blobContent, 'r'))
 				)
 			);
 
@@ -60,9 +57,6 @@ pdo_ibm: Select LOBs, including null and 0-length
 				}
 				$stmt->execute();
 			}
-
-			fclose($clobStream);
-			fclose($blobStream);
 
 			print "succesful\n";
 			/*
@@ -98,17 +92,32 @@ pdo_ibm: Select LOBs, including null and 0-length
 
 			foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $i => $row) {
 				var_dump($row['ID']);
+				$clob = $row['MY_CLOB'];
 
-				if (is_resource($row['MY_CLOB'])) {
-					$clob = stream_get_contents($row['MY_CLOB']);
-				} else {
-					$clob = $row['MY_CLOB'];
+				if (is_string($clob)) {
+					$fp = fopen('php://temp', 'rb+');
+					assert(is_resource($fp));
+					fwrite($fp, $clob);
+					fseek($fp, 0);
+					$clob = $fp;
 				}
 
-				if (is_resource($row['MY_BLOB'])) {
-					$blob = stream_get_contents($row['MY_BLOB']);
-				} else {
-					$blob = $row['MY_BLOB'];
+				if (is_resource($clob)) {
+					$clob = stream_get_contents($clob);
+				}
+
+				$blob = $row['MY_BLOB'];
+
+				if (is_string($blob)) {
+					$fp = fopen('php://temp', 'rb+');
+					assert(is_resource($fp));
+					fwrite($fp, $blob);
+					fseek($fp, 0);
+					$blob = $fp;
+				}
+
+				if (is_resource($blob)) {
+					$blob = stream_get_contents($blob);
 				}
 
 				var_dump($clob);
@@ -137,7 +146,7 @@ string(1) "3"
 string(0) ""
 string(0) ""
 string(1) "4"
-string(35) "this is the clob resource that never ends..."
-string(35) "this is the blob resource that never ends..."
+string(32768) "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc%s"
+string(32768) "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb%s"
 done
 
